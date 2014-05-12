@@ -1,6 +1,8 @@
 # parse_frac_log.R
 #
-# get filelist via list.files(path="/path/to/files/", pattern="*.log", full.names=T)
+# filelist = list.files(path="/path/to/files/", pattern="*.log", full.names=T)
+# keyfile = "keyfile.csv"
+# outfile = "your_output.csv"
 
 
 parse_frac_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, stimClassColumn=3, correctResponseColumn=6 ) {
