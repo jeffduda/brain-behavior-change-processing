@@ -1,14 +1,15 @@
-# parse_frac_log.R
+# score_nback_log.R
 #
 # filelist = list.files(path="/path/to/files/", pattern="*.log", full.names=T)
-# keyfile = "keyfile.csv"
+# keyfile = "keyfile.xlsx"
 # outfile = "your_output.csv" [OPTIONAL]
 # trialColumn = index of column in keyfile with trial #'s (default=2)
 # stimClassColumn = index of column in keyfile with stim class names(defualt=3)
 # correctResponseColumn = index of column in keyfile with correct reponse flag (default=6)
 
+require(xlsx)
 
-parse_frac_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, stimClassColumn=3, correctResponseColumn=6, logEventTypeColumn=3, logTrialColumn=2, logTimeColumn=6 ) {
+score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, stimClassColumn=3, correctResponseColumn=6, logEventTypeColumn=3, logTrialColumn=2, logTimeColumn=6 ) {
   
   ext = ".log"
 
@@ -20,7 +21,7 @@ parse_frac_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, 
     stop( "No key file specified")
   }
 
-  key = read.csv(keyfile)
+  key = read.xlsx(keyfile)
 
   nFiles = length(filelist)
 
