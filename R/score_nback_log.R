@@ -7,7 +7,7 @@
 # stimClassColumn = index of column in keyfile with stim class names(defualt=3)
 # correctResponseColumn = index of column in keyfile with correct reponse flag (default=6)
 
-require(xlsx)
+#require(xlsx)
 
 score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, stimClassColumn=3, correctResponseColumn=6, logEventTypeColumn=3, logTrialColumn=2, logTimeColumn=6 ) {
   
@@ -21,7 +21,9 @@ score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2,
     stop( "No key file specified")
   }
 
-  key = read.xlsx(keyfile,1)
+
+  #key = read.xlsx(keyfile,1)
+  key = read.csv(keyfile)
 
   nFiles = length(filelist)
 
