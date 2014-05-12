@@ -2,7 +2,10 @@
 #
 # filelist = list.files(path="/path/to/files/", pattern="*.log", full.names=T)
 # keyfile = "keyfile.csv"
-# outfile = "your_output.csv"
+# outfile = "your_output.csv" [OPTIONAL]
+# trialColumn = index of column with trial #'s (default=2)
+# stimClassColumn = index of column with stim class names(defualt=3)
+# correctResponseColumn = index of column with correct reponse flag (default=6)
 
 
 parse_frac_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, stimClassColumn=3, correctResponseColumn=6 ) {
