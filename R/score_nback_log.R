@@ -21,7 +21,7 @@ score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2,
     stop( "No key file specified")
   }
 
-  key = read.xlsx(keyfile)
+  key = read.xlsx(keyfile,1)
 
   nFiles = length(filelist)
 
@@ -68,7 +68,7 @@ score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2,
       trial = unlist(idat[logTrialColumn])[response]
 
       #time = idat$TTime[response]
-      time = unlist(idat[logTimeColunn])[response]
+      time = unlist(idat[logTimeColumn])[response]
       
       #keyRow = which(key$trial... == trial )
       keyRow = which(unlist(key[trialColumn]) == trial)
