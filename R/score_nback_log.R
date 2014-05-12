@@ -3,12 +3,12 @@
 # filelist = list.files(path="/path/to/files/", pattern="*.log", full.names=T)
 # keyfile = "keyfile.csv"
 # outfile = "your_output.csv" [OPTIONAL]
-# trialColumn = index of column with trial #'s (default=2)
-# stimClassColumn = index of column with stim class names(defualt=3)
-# correctResponseColumn = index of column with correct reponse flag (default=6)
+# trialColumn = index of column in keyfile with trial #'s (default=2)
+# stimClassColumn = index of column in keyfile with stim class names(defualt=3)
+# correctResponseColumn = index of column in keyfile with correct reponse flag (default=6)
 
 
-parse_frac_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, stimClassColumn=3, correctResponseColumn=6 ) {
+parse_frac_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, stimClassColumn=3, correctResponseColumn=6, eventTypeColumn=3, trialColumn=2, timeColumn=6 ) {
   
   ext = ".log"
 
@@ -46,7 +46,10 @@ parse_frac_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, 
 
     idat = read.csv(file, skip=3, sep="\t")
 
-    responses = which(idat$Event.Type=="Response")
+    
+    #responses = which(idat$Event.Type=="Response")
+    responses = which(unlist(idat[eventTypeColumn])=="Response")
+
     #print( filename )
     #print( paste( id, "has", length(responses), "responses" ))
 
@@ -59,8 +62,12 @@ parse_frac_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, 
     otherTime = 0.0
 
     for ( response in responses ) {
-      trial = idat$Trial[response]
-      time = idat$TTime[response]
+
+      #trial = idat$Trial[response]
+      trial = unlist(idat[trialColumn])[response]
+
+      #time = idat$TTime[response]
+      time = unlist(idat[timeColunn])[response]
       
       #keyRow = which(key$trial... == trial )
       keyRow = which(unlist(key[trialColumn]) == trial)
