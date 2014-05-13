@@ -9,7 +9,7 @@
 
 #require(xlsx)
 
-score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2, stimClassColumn=3, correctResponseColumn=6, logEventTypeColumn=3, logTrialColumn=2, logTimeColumn=6 ) {
+score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA ) {
   
   ext = ".log"
 
@@ -21,10 +21,8 @@ score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2,
     stop( "No key file specified")
   }
 
-
   #key = read.xlsx(keyfile,1)
   key = read.csv(keyfile)
-
   nFiles = length(filelist)
 
   subject = rep("NA",nFiles)
@@ -32,8 +30,6 @@ score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2,
   falseCount = matrix(0,nFiles,4)
   trueMRT = matrix(0,nFiles,4)
   falseMRT = matrix(0,nFiles,4)
-  #otherCount = rep(0,nFiles)
-  #otherMRT = rep(0,nFiles)
   
   nBackList = c("NBack0", "NBack1", "NBack2", "NBack3")
   colnames(trueCount) = nBackList
@@ -41,101 +37,88 @@ score_nback_log <- function( filelist=NA, keyfile=NA, outfile=NA, trialColumn=2,
   colnames(falseCount) = nBackList
   colnames(falseMRT) = nBackList
 
-  idx = 1
+  subIdx = 1
   for ( file in filelist ) {
     filename = basename( file )
     id = sub(ext, "", filename)
-    subject[idx] = id
+    subject[subIdx] = id
 
     idat = read.csv(file, skip=3, sep="\t")
 
-    
-    #responses = which(idat$Event.Type=="Response")
-    responses = which(unlist(idat[logEventTypeColumn])=="Response")
+    responses = which( (idat$Event.Type=="Response") & (idat$Code==2) )
+    trials = as.numeric(as.character(idat$Trial)[responses])
+    times = as.numeric( as.character(idat$TTime[responses] ))
+    #print(times)
 
     #print( filename )
     #print( paste( id, "has", length(responses), "responses" ))
 
-    truePos = rep(0,4)
-    falsePos = rep(0,4)
-    otherHit = 0
+    
+    trialTypes = rep("NA", length(trials))
+    correctTrials = rep(0, length(trials))
+    for ( idx in c(1:length(trials)) ) {
+      keyRow = which(key$TR == trials[idx])
 
-    trueTime = rep(0.0,4)
-    falseTime = rep(0.0,4)
-    otherTime = 0.0
-
-    for ( response in responses ) {
-
-      #trial = idat$Trial[response]
-      trial = unlist(idat[logTrialColumn])[response]
-
-      #time = idat$TTime[response]
-      time = unlist(idat[logTimeColumn])[response]
-      
-      #keyRow = which(key$trial... == trial )
-      keyRow = which(unlist(key[trialColumn]) == trial)
-      
-      #correct = key$correct.response[ keyRow ]
-      correct = unlist(key[correctResponseColumn])[keyRow]
-      
-      #trialType = key$Stim.Class[ keyRow ]
-      trialType = unlist(key[stimClassColumn])[keyRow]
-      
-      if ( length(keyRow) > 0 ) {
-      if ( trialType == "0-back") {
-        nBack = 0
-      } 
-      else if ( trialType == "1-back") {
-        nBack = 1
-      }
-      else if (trialType == "2-back") {
-        nBack = 2
-      }
-      else if (trialType == "3-back") {
-        nBack = 3
-      }  
-      } else {
-        print(paste( "WARNING: no trial type found for", trial))      
-      }
-      
-      if ( length(correct) == 0 ) {
-        print(paste("WARNING: ", filename, "HAS TRIAL", trial, "WHICH IS NOT FOUND IN KEY"))
-        otherHit = otherHit + 1
-        otherTime = otherTime + 1
-      } else if ( !is.na(correct) ) {
-
-        if ( correct == 1 ) {
-          truePos[nBack+1] = truePos[nBack+1] + 1
-          trueTime[nBack+1] = trueTime[nBack+1] + time
-        } else if ( correct == 0 ) {
-          falsePos[nBack+1] = falsePos[nBack+1] + 1
-          falseTime[nBack+1] = falseTime[nBack+1] + time
+      if ( length(keyRow) < 0 ) {
+        print( paste("WARNING: NO TRIAL TYPE FOUND FOR:", trials[idx]))
         }
-
-      } else {
-        otherHit = otherHit + 1
-        otherTime = otherTime + 1
+      else {
+        trialTypes[idx] = as.character(key$Stim.Class[keyRow])
+        correctTrials[idx] = key$response[keyRow]    
+        }  
       }
-      
-      #print(paste(truePos, trueTime, trueTime/truePos))
 
-    }
+    nBackTrials = which( (trialTypes=="0-back") | ( trialTypes=="1-back") | (trialTypes=="2-back") | (trialTypes=="3-back") )
+    trials = trials[nBackTrials]
+    trialTypes = trialTypes[nBackTrials]
+    correctTrials = correctTrials[nBackTrials]
+    times = times[nBackTrials]
 
-    trueTime = trueTime / truePos
-    falseTime = falseTime / falsePos
-    trueTime[truePos==0] = 0
-    falseTime[falsePos==0] = 0
+    #print( paste( id, "has", length(trials), "n-back responses" ))
+    #print( paste( id, "has", length(which(trialTypes=="0-back")), "0-back responses"))
+    #print( paste( id, "has", length(which(trialTypes=="1-back")), "1-back responses"))
+    #print( paste( id, "has", length(which(trialTypes=="2-back")), "2-back responses"))
+    #print( paste( id, "has", length(which(trialTypes=="3-back")), "3-back responses"))
 
-    trueCount[idx,] = truePos
-    trueMRT[idx,] = trueTime/10.0     # convert to ms
-    falseCount[idx,] = falsePos
-    falseMRT[idx,] = falseTime/10.0   # convert to ms
-    #otherCount[idx] = otherHit
-    #otherMRT[idx] = otherTime
+    back0_tp = which( (trialTypes=="0-back") & (correctTrials==1) )
+    back0_fp = which( (trialTypes=="0-back") & (correctTrials==0) )
 
-    idx = idx + 1
-    #print( paste( id, truePos, trueTime, falsePos, falseTime ))
+    trueCount[subIdx, 1]  = length(back0_tp)
+    trueMRT[subIdx, 1]    = mean( times[back0_tp] )
+    falseCount[subIdx, 1] = length(back0_fp)
+    falseMRT[subIdx, 1]   = mean( times[back0_fp] )
+
+    back1_tp = which( (trialTypes=="1-back") & (correctTrials==1) )
+    back1_fp = which( (trialTypes=="1-back") & (correctTrials==0) )
+
+    trueCount[subIdx, 2]  = length(back1_tp)
+    trueMRT[subIdx, 2]    = mean( times[back1_tp] )
+    falseCount[subIdx, 2] = length(back1_fp)
+    falseMRT[subIdx, 2]   = mean( times[back1_fp] )
+
+    back2_tp = which( (trialTypes=="2-back") & (correctTrials==1) )
+    back2_fp = which( (trialTypes=="2-back") & (correctTrials==0) )
+
+    trueCount[subIdx, 3]  = length(back2_tp)
+    trueMRT[subIdx, 3]    = mean( times[back2_tp] )
+    falseCount[subIdx, 3] = length(back2_fp)
+    falseMRT[subIdx, 3]   = mean( times[back2_fp] )
+
+    back3_tp = which( (trialTypes=="3-back") & (correctTrials==1) )
+    back3_fp = which( (trialTypes=="3-back") & (correctTrials==0) )
+
+    trueCount[subIdx, 4]  = length(back3_tp)
+    trueMRT[subIdx, 4]    = mean( times[back3_tp] )
+    falseCount[subIdx, 4] = length(back3_fp)
+    falseMRT[subIdx, 4]   = mean( times[back3_fp] )
+    
+    subIdx = subIdx + 1
   }
+
+  trueMRT[trueCount==0]=0
+  falseMRT[falseCount==0]=0
+  trueMRT = trueMRT * 10.0
+  falseMRT = falseMRT * 10.0
 
   odat = data.frame(Subject=subject, TruePositives=trueCount, TrueMRT=trueMRT, FalsePositives=falseCount, FalseMRT=falseMRT)
   if ( !is.na(outfile) ) {
