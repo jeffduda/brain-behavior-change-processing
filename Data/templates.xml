@@ -1,0 +1,31 @@
+<?xml version='1.0'?>
+<templates>
+<template name="Kirby">
+        <head>/data/jet/jtduda/data/Templates/Kirby/S_template3.nii.gz</head>
+        <brain>/data/jet/jtduda/data/Templates/Kirby/S_template3_BrainCerebellum.nii.gz</brain>
+        <extractionmask>/data/jet/jtduda/data/Templates/Kirby/S_template_BrainCerebellumExtractionMask.nii.gz</extractionmask>
+        <probmask>/data/jet/jtduda/data/Templates/Kirby/S_template_BrainCerebellumProbabilityMask.nii.gz</probmask>
+        <priors>/data/jet/jtduda/data/Templates/Kirby/Priors/priors%d.nii.gz</priors>
+</template>
+
+<template name="Kirby2">
+        <head>/data/jet/jtduda/data/Templates/Kirby/S_template3.nii.gz</head>
+        <brain>/data/jet/jtduda/data/Templates/Kirby/S_template3_BrainCerebellum.nii.gz</brain>
+        <extractionmask>/data/jet/jtduda/data/Templates/Kirby/S_template_BrainCerebellumExtractionMask.nii.gz</extractionmask>
+        <probmask>/data/jet/jtduda/data/Templates/Kirby/S_template_BrainCerebellumProbabilityMask.nii.gz</probmask>
+        <priors>/data/jet/jtduda/data/Templates/Kirby/Priors/priors%d.nii.gz</priors>
+</template>
+
+<template name="Kirby3">
+        <head>/data/jet/jtduda/data/Templates/Kirby/S_template3.nii.gz</head>
+        <brain>/data/jet/jtduda/data/Templates/Kirby/S_template3_BrainCerebellum.nii.gz</brain>
+        <extractionmask>/data/jet/jtduda/data/Templates/Kirby/S_template_BrainCerebellumExtractionMask.nii.gz</extractionmask>
+        <probmask>/data/jet/jtduda/data/Templates/Kirby/S_template_BrainCerebellumProbabilityMask.nii.gz</probmask>
+        <priors>/data/jet/jtduda/data/Templates/Kirby/Priors/priors%d.nii.gz</priors>
+</template>
+
+</templates>
+
+
+
+
