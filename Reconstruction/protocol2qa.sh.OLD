@@ -1,0 +1,158 @@
+#!/bin/bash
+# ---------------------------------------------------------------
+# PROTOCOLQA.sh
+#
+# Designed to call correct QA scripts for each MRI modality
+#   for specific study protocol (e.g. EONS, ONM, ...)
+#
+# NOTE: 1) expects supplied dicoms to be sorted/named in proper order by image number!
+#       2) This script is very specific to how each series folder was named when it was extracted/sorted!!
+#           e.g. XNAT, dicom_MFsort, ...
+#
+#
+# MElliott 7/2013
+# ---------------------------------------------------------------
+
+# --- print how to call this thing ---
+Usage() {
+cat << EOF
+USAGE: `basename $0` PROTOCOL topdir/ 
+     or
+       `basename $0` PROTOCOL seqdir1/ seqdir2/ [seqdir3/ ... seqdirN/] 
+  where PROTOCOL is one of:
+    ABST ONM CIRNA
+EOF
+exit 1
+}
+
+# --- Figure out path to other scripts in same place as this one ---
+EXECDIR=`dirname $0`
+if [ "X${EXECDIR}" != "X" ]; then
+    OCD=$PWD; cd ${EXECDIR}; EXECDIR=${PWD}/; cd $OCD # makes path absolute
+fi
+
+# --- Parse command line ---
+if [ $# -lt 2 ]; then Usage; fi
+protocol=$1
+shift
+if [ $# -eq 1 ]; then
+    dirlist=`ls -d $1/*`
+else
+    dirlist=$@
+fi
+
+# --- Execute QA modules with appropriate options ---
+last_seqroot="XXX"
+case $protocol in 
+    # --- CIRNA ---
+    CIRNA) for seqdir in $dirlist ; do 
+           if [ ! -d $seqdir ]; then
+             echo "$seqdir is not a directory. Ignoring it."
+           else
+             seqroot=`basename $seqdir`
+             case $seqroot in
+                S0*_bbl1_*)  		niftiroot=`echo $seqroot | cut -d_ -f 2,3,4,5,6,7` # peel off bold task name
+					niftifile=$seqdir/NIFTIs/${niftiroot}.nii
+					niftiqa=$seqdir/QA/${niftiroot}.qa
+				        if [ -e $niftifile ]; then
+						echo "Starting BOLD QA on ${niftifile}"
+						${EXECDIR}qa_bold_v1.sh ${niftifile} ${niftiqa}
+					fi
+				   	;;
+
+                S0*_DTI_2x32_35)        niftiroot="dti_merged"
+					niftifile=$seqdir/NIFTIs/${niftiroot}.nii
+					niftiqa=$seqdir/QA/${niftiroot}.qa
+					bvalfile=$seqdir/NIFTIs/${niftiroot}.bval
+					bvecfile=$seqdir/NIFTIs/${niftiroot}.bvec
+				        if [ -e $niftifile ]; then
+						echo "Starting DTI QA on ${niftifile}"
+						${EXECDIR}qa_dti_v1.sh ${niftifile} ${bvalfile} ${bvecfile} ${niftiqa}
+					fi
+				   	;;
+
+                S0*_ep2d_pcasl*|S0*_ep2d_se_pcasl*)        niftiroot="pcasl"
+					niftifile=$seqdir/NIFTIs/${niftiroot}.nii
+					dcmfile=$seqdir/NIFTIs/${niftiroot}_exampledicom.DCM
+					niftiqa=$seqdir/QA/${niftiroot}.qa
+				        if [ -e $niftifile ]; then
+						echo "Starting PCASL QA on $niftifile"
+						${EXECDIR}qa_pcasl_v1.sh -example_dicom $dcmfile $niftifile $niftiqa
+					fi
+				   	;;  
+
+                *) 			echo "Ignoring unrecognized directory $seqdir" 
+		   			;;
+             esac
+             last_seqdir=$seqdir
+             last_seqroot=$seqroot
+           fi
+	   echo "---------------------------------------------------"
+         done          
+         ;;
+
+    # --- ABST ---
+    ABST) for seqdir in $dirlist ; do 
+           if [ ! -d $seqdir ]; then
+             echo "$seqdir is not a directory. Ignoring it."
+           else
+             seqroot=`basename $seqdir`
+             case $seqroot in
+                S0*_bbl1_*)  		niftiroot=`echo $seqroot | cut -d_ -f 2,3,4,5,6,7` # peel off bold task name
+					niftifile=$seqdir/NIFTIs/${niftiroot}.nii
+					niftiqa=$seqdir/QA/${niftiroot}.qa
+				        if [ -e $niftifile ]; then
+						echo "Starting BOLD QA on ${niftifile}"
+						${EXECDIR}qa_bold_v1.sh ${niftifile} ${niftiqa}
+					fi
+				   	;;
+
+                S0*_ep2d_se_pcasl*)     niftiroot=pcasl
+					niftifile=$seqdir/NIFTIs/${niftiroot}.nii
+					dcmfile=$seqdir/NIFTIs/${niftiroot}_exampledicom.DCM
+					niftiqa=$seqdir/QA/${niftiroot}.qa
+				        if [ -e $niftifile ]; then
+						echo "Starting PCASL QA on $niftifile"
+						${EXECDIR}qa_pcasl_v1.sh -example_dicom $dcmfile $niftifile $niftiqa
+					fi
+				   	;;  
+
+                *) 			echo "Ignoring unrecognized directory $seqdir" 
+		   			;;
+             esac
+             last_seqdir=$seqdir
+             last_seqroot=$seqroot
+           fi
+	   echo "---------------------------------------------------"
+         done          
+         ;;
+
+    # --- ABST ---
+    CHANTIX) for seqdir in $dirlist ; do 
+           if [ ! -d $seqdir ]; then
+             echo "$seqdir is not a directory. Ignoring it."
+           else
+             seqroot=`basename $seqdir`
+             case $seqroot in
+                S0*_bbl1_*)  		niftiroot=`echo $seqroot | cut -d_ -f 2,3,4,5,6,7` # peel off bold task name
+					niftifile=$seqdir/NIFTIs/${niftiroot}.nii
+					niftiqa=$seqdir/QA/${niftiroot}.qa
+				        if [ -e $niftifile ]; then
+						echo "Starting BOLD QA on ${niftifile}"
+						${EXECDIR}qa_bold_v1.sh ${niftifile} ${niftiqa}
+					fi
+				   	;;
+
+
+                *) 			echo "Ignoring unrecognized directory $seqdir" 
+		   			;;
+             esac
+           fi
+	   echo "---------------------------------------------------"
+         done          
+         ;;
+
+    *) echo "ERROR: Unrecognized PROTOCOL: ${protocol}."; Usage; ;;
+esac
+
+exit 0

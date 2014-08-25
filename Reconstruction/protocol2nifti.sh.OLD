@@ -1,0 +1,233 @@
+#!/bin/bash
+# ---------------------------------------------------------------
+# PROTOCOL2NIFTI.sh
+#
+# Wrapper program for "sequence2nifti.sh"
+# Designed to call "desquence2nifti.sh" with appropriate switches/options 
+#   for specific study protocol (e.g. EONS, ONM, ...)
+#
+# NOTE: 1) expects supplied dicoms to be sorted/named in proper order by image number!
+#       2) This script is very specific to how each series folder was named when it was extracted/sorted!!
+#           e.g. XNAT, dicom_MFsort, ...
+#
+#
+# MElliott 7/2013
+# ---------------------------------------------------------------
+
+# --- print how to call this thing ---
+Usage() {
+cat << EOF
+USAGE: `basename $0` PROTOCOL topdir/ 
+     or
+       `basename $0` PROTOCOL seqdir1/ seqdir2/ [seqdir3/ ... seqdirN/] 
+  where PROTOCOL is one of:
+    ABST CHANTIX CIRNA ONM
+EOF
+exit 1
+}
+
+# --- Figure out path to other scripts in same place as this one ---
+EXECDIR=`dirname $0`
+if [ "X${EXECDIR}" != "X" ]; then
+    OCD=$PWD; cd ${EXECDIR}; EXECDIR=${PWD}/; cd $OCD # makes path absolute
+fi
+
+# --- Parse command line ---
+if [ $# -lt 2 ]; then Usage; fi
+protocol=$1
+shift
+if [ $# -eq 1 ]; then
+    dirlist=`ls -d $1/*`
+else
+    dirlist=$@
+fi
+
+# --- Execute sequence2nifti with appropriate options ---
+last_seqroot="XXX"
+case $protocol in 
+
+    # --- CIRNA ---
+    CIRNA) for seqdir in $dirlist ; do 
+           if [ ! -d $seqdir ]; then
+            echo "$seqdir is not a directory. Ignoring it."
+           else
+            seqroot=`basename $seqdir`
+            case $seqroot in
+                S0*_mprage_*|S0*_MPRAGE_*)	niftifile="$seqdir/NIFTIs/mprage.nii"
+						if [ ! -e $niftifile ]; then
+							type="STRUCTURAL_RPI"     
+							echo "Converting $seqroot/ to NIFTI type $type"
+							${EXECDIR}sequence2nifti.sh $type $niftifile $seqdir/Dicoms/*.dcm 
+						else 
+							echo "$niftifile already exists. Skipping it."						
+						fi ;;
+
+
+                S0*_bbl1_*)  			niftiroot=`echo $seqroot | cut -d_ -f 2,3,4,5,6,7` # peel off bold task name
+						niftifile="$seqdir/NIFTIs/${niftiroot}.nii"
+						if [ ! -e $niftifile ]; then
+							type="BOLD_RPI"     
+							echo "Converting $seqroot/ to NIFTI type $type"
+				        		${EXECDIR}sequence2nifti.sh $type $niftifile $seqdir/Dicoms/*.dcm    
+						else 
+							echo "$niftifile already exists. Skipping it."						
+						fi ;;
+
+
+                S0*_ep2d_pcasl*|S0*_ep2d_se_pcasl*) niftifile="$seqdir/NIFTIs/pcasl.nii"
+						if [ ! -e $niftifile ]; then
+							type="PCASL_RPI"     
+							echo "Converting $seqroot/ to NIFTI type $type"
+				        		${EXECDIR}sequence2nifti.sh $type $niftifile  $seqdir/Dicoms/*.dcm   
+						else 
+							echo "$niftifile already exists. Skipping it."						
+						fi ;;
+
+                S0*_DTI_2x32_35)        	echo "Found $seqroot - will wait for second DTI directory"  ;;                    # Need 2 directories together for DTI35 + DTI36
+                S0*_DTI_2x32_36)        	if [[ "$last_seqroot" == S0*_DTI_2x32_35  ]]; then                                     
+                                       			echo "Found second DTI directory $seqroot - processing merged DTI images now..."
+							niftifile="$last_seqdir/NIFTIs/dti_merged.nii"
+							if [ ! -e $niftifile ]; then
+								type="DTI_CONCAT"     
+                                               			${EXECDIR}sequence2nifti.sh $type $niftifile $last_seqdir/Dicoms/*.dcm $seqdir/Dicoms/*.dcm 
+							else
+								echo "$niftifile already exists. Skipping it."						
+							fi
+                                        	else
+                                                	echo "ERROR: Previous folder was NOT DTI_2X32_35! Ignoring this $seqroot!"
+							#echo "last_seqroot = $last_seqroot"
+  						fi ;;
+  
+                S0*_B0map_*)            	if [[ "$last_seqroot" == S0*_B0map* ]]; then                                      # Need 2 directories together for b0map
+                                        		echo "Found second B0map directory $seqroot - processing B0map now..."
+							niftifile="$last_seqdir/NIFTIs/b0map_mask.nii"
+							if [ ! -e $niftifile ]; then
+								type="B0MAP_RPI"     
+								#echo "Converting $seqroot/ to NIFTI type $type"
+                                                		${EXECDIR}sequence2nifti.sh $type $last_seqdir/NIFTIs/b0map.nii $last_seqdir/Dicoms/*.dcm $seqdir/Dicoms/*.dcm 
+ 							else
+								echo "$niftifile already exists. Skipping it."						
+							fi
+                                        	else
+                                                	echo "Found $seqroot - will wait for second B0map directory"
+							#echo "last_seqroot = $last_seqroot"
+                                        	fi ;;
+
+                *) 				echo "Ignoring unrecognized directory $seqdir" 
+		   				;;
+            esac
+            last_seqdir=$seqdir
+            last_seqroot=$seqroot
+           fi
+	   echo "---------------------------------------------------"
+         done          
+         ;;
+
+
+    # --- ABST ---
+    ABST) for seqdir in $dirlist ; do 
+           if [ ! -d $seqdir ]; then
+            echo "$seqdir is not a directory. Ignoring it."
+           else
+            seqroot=`basename $seqdir`
+            case $seqroot in
+                S0*_mprage_*)  		type="STRUCTURAL_RPI"     
+					echo "Converting $seqroot/ to NIFTI type $type"
+					${EXECDIR}sequence2nifti.sh $type $seqdir/NIFTIs/mprage $seqdir/Dicoms/*.dcm    ;;
+
+                S0*_MPRAGE_*)  		type="STRUCTURAL_RPI"     
+					echo "Converting $seqroot/ to NIFTI type $type"
+					${EXECDIR}sequence2nifti.sh $type $seqdir/NIFTIs/mprage $seqdir/Dicoms/*.dcm    ;;
+
+                S0*_bbl1_*)  		type="BOLD_RPI"     
+					echo "Converting $seqroot/ to NIFTI type $type"
+					niftiroot=`echo $seqroot | cut -d_ -f 2,3,4,5,6,7` # peel off bold task name
+				        ${EXECDIR}sequence2nifti.sh $type $seqdir/NIFTIs/$niftiroot   $seqdir/Dicoms/*.dcm    ;;
+
+                S0*_ep2d_se_pcasl*)     type="PCASL_RPI"     
+					echo "Converting $seqroot/ to NIFTI type $type"
+				        ${EXECDIR}sequence2nifti.sh $type $seqdir/NIFTIs/pcasl  $seqdir/Dicoms/*.dcm    ;;
+
+                S0*_B0map_*)            if [[ "$last_seqroot" == S0*_B0map* ]]; then                                      # Hack for needing 2 directories together
+                                        	echo "Found second B0map directory $seqroot - processing B0map now..."
+						type="B0MAP_RPI"     
+						#echo "Converting $seqroot/ to NIFTI type $type"
+                                                ${EXECDIR}sequence2nifti.sh $type $last_seqdir/NIFTIs/b0map $last_seqdir/Dicoms/*.dcm $seqdir/Dicoms/*.dcm 
+                                        else
+                                                echo "Found $seqroot - will wait for second B0map directory"
+						#echo "last_seqroot = $last_seqroot"
+                                        fi ;;
+
+                *) 			echo "Ignoring unrecognized directory $seqdir" 
+		   			;;
+            esac
+            last_seqdir=$seqdir
+            last_seqroot=$seqroot
+           fi
+	   echo "---------------------------------------------------"
+         done          
+         ;;
+
+
+    # --- CHANTIX ---
+    CHANTIX) for seqdir in $dirlist ; do 
+           if [ ! -d $seqdir ]; then
+            echo "$seqdir is not a directory. Ignoring it."
+           else
+            seqroot=`basename $seqdir`
+            case $seqroot in
+                S0*_mprage_*)  		type="STRUCTURAL_RPI"     
+					echo "Converting $seqroot/ to NIFTI type $type"
+					${EXECDIR}sequence2nifti.sh $type $seqdir/NIFTIs/mprage $seqdir/Dicoms/*.dcm    ;;
+
+                S0*_MPRAGE_*)  		type="STRUCTURAL_RPI"     
+					echo "Converting $seqroot/ to NIFTI type $type"
+					${EXECDIR}sequence2nifti.sh $type $seqdir/NIFTIs/mprage $seqdir/Dicoms/*.dcm    ;;
+
+                S0*_bbl1_*)  		type="BOLD_RPI"     
+					echo "Converting $seqroot/ to NIFTI type $type"
+					niftiroot=`echo $seqroot | cut -d_ -f 2,3,4,5,6,7` # peel off bold task name
+				        ${EXECDIR}sequence2nifti.sh $type $seqdir/NIFTIs/$niftiroot   $seqdir/Dicoms/*.dcm    ;;
+
+                *) 			echo "Ignoring unrecognized directory $seqdir" 
+		   			;;
+            esac
+ 
+           fi
+	   echo "---------------------------------------------------"
+         done          
+         ;;
+
+    # --- ONM ---
+    ONM) for seqdir in $dirlist ; do 
+           if [ ! -d $seqdir ]; then
+            echo "$seqdir is not a directory. Ignoring it."
+           else
+            seqroot=`basename $seqdir`
+            case $seqroot in
+                *MPRAGE_NAVprotocol)         ${EXECDIR}sequence2nifti.sh NAV_MPRAGE     $seqdir/$seqroot $seqdir/*.dcm    ;;
+                *MPRAGE_TI1110_ipat2_moco3)  ${EXECDIR}sequence2nifti.sh STRUCTURAL_RPI $seqdir/$seqroot $seqdir/*.dcm    ;;
+                *ciss_0.4mm_peHF)            ${EXECDIR}sequence2nifti.sh STRUCTURAL_RPI $seqdir/$seqroot $seqdir/*.dcm    ;;
+                *t2_BULB)                    ${EXECDIR}sequence2nifti.sh STRUCTURAL_RPI $seqdir/$seqroot $seqdir/*.dcm    ;;
+                *dwi_ADC)                    ${EXECDIR}sequence2nifti.sh DWI            $seqdir/$seqroot $seqdir/*.dcm    ;;
+                *DTI_64Combined_MB2)         ${EXECDIR}sequence2nifti.sh DTI            $seqdir/$seqroot $seqdir/*.dcm    ;;
+                *pcasl_se_we)                ${EXECDIR}sequence2nifti.sh PCASL          $seqdir/$seqroot $seqdir/*.dcm    ;;
+                *PCASL_calibration_notrig*)  ${EXECDIR}sequence2nifti.sh STRUCTURAL_RPI $seqdir/$seqroot $seqdir/*.dcm    ;;
+                B0map_v4)                    ${EXECDIR}sequence2nifti.sh B0MAP          $seqdir/$seqroot $seqdir/*.dcm    ;; # XNAT puts both series in one folder
+                S*_B0map_v4)                 if [[ "$last_seqdir" == *B0map_v4 ]]; then                                      # Hack for needing 2 directories together
+                                                echo "Found second B0map directory $seqroot - processing B0map now..."
+                                                ${EXECDIR}sequence2nifti.sh B0MAP  $seqdir/$seqroot $last_seqdir/*.dcm $seqdir/*.dcm 
+                                             else
+                                                echo "Found $seqroot - will wait for second B0map directory"
+                                             fi ;;
+                *) echo "Ignoring unrecognized directory $seqdir" ;;
+            esac
+            last_seqdir=$seqdir
+           fi
+         done          
+         ;;
+       
+    *) echo "ERROR: Unrecognized PROTOCOL: ${protocol}."; Usage; ;;
+esac
+
+exit 0

@@ -65,7 +65,6 @@ if [[ "$TEMPLATENAME" == "Kirby" ]]; then
   EMASK="${TDIR}S_template_BrainCerebellumExtractionMask.nii.gz"
   PRIORS="${TDIR}Priors/priors%d.nii.gz"
   BRAIN="${TDIR}S_template3_BrainCerebellum.nii.gz"
-  
 fi
 
 BASENAME=`basename $IMG .nii` 

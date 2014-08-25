@@ -1,0 +1,15 @@
+#!/bin/csh
+#
+# UNTAR_ALL -- extract multiple tar archives
+#
+if ($#argv < 1) then
+	echo "usage: $0 file(s)"
+	exit 1
+endif
+
+foreach file ($argv[*])	# loop over all files
+	echo "Extracting from $file..."
+	tar xvf $file
+end
+
+exit 0			# Done
