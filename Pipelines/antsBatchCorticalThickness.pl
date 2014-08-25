@@ -60,6 +60,36 @@ sub GetTemplate{
   return %templateHash;
 }
 
+
+
+sub PrintUsage{
+print <<USAGE
+
+antsBatchCorticalThickness.pl
+  This program processes the T1 images for a set of subjects in order to provide
+  1) Brain extraction (i.e. skull-stripping)
+  2) A six-compartment segmentation( CSF,GM,WM,Deep Gray, Brain stem and cerebellum)
+  3) Registration to template
+  4) Estimation of cortical thickness
+  
+Required Inputs
+  --subject-directory - location of subject directories (full path, not relative)
+  --sequence-id - string indicating identifier of T1 data, example="MPRAGE"
+  
+Optional Inputs
+  --subject-list - a text file containing IDs of subjects to process. Default is to process all subjects in the directory
+  --template - name of template defined in Data/templates.xml file. Default="Kirby"
+  --slots - number of slots for qsub. Default=2
+  --template-xml - custom template file
+  --info-only - print commands to be run, but don't actually run or submit them
+  --help - print this usage
+  
+USAGE
+;
+
+}
+
+
 # Check for ANTSPATH
 my $ANTSPATH = $ENV{'ANTSPATH'};
 my $ACT = $ANTSPATH."/antsCorticalThickness.sh";
@@ -87,9 +117,12 @@ my $study = "";
 my $seqID = "";
 my $template = "Kirby";
 my $info;
+my $help;
 my $slots = 2;
 my $templateXML = $DATA."/templates.xml";
 #$templateXML = $DATA."/test.xml";
+
+my $argc = scalar(@ARGV);
 
 GetOptions( "subject-directory=s"     => \$dir,
             "subject-list=s"          => \$list,
@@ -99,13 +132,23 @@ GetOptions( "subject-directory=s"     => \$dir,
             "template=s"              => \$template,
             "slots=i"                 => \$slots,
             "template-xml=s"          => \$templateXML,
+            "help"                    => \$help,
             "info-only"               => \$info )
 or die( "Error in command line arguments\n");
+
+if ( $help || ($argc ==0)) {
+  PrintUsage();
+  exit 0;
+  }
 
 # Get template info
 my %templateHash = GetTemplate( $templateXML, $template );
 #print Dumper(\%templateHash);
 
+if ( ! -d $dir) {
+  print( "Could not find subject directory $dir\n");
+  exit 1;
+  }
 
 # Get subject list
 my @subs = ();
