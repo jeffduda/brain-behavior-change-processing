@@ -22,7 +22,7 @@ sub GetTemplate{
 
   #print Dumper($xmlData);
 
-  my $head = $xmlData->{template}->{$templateName}->{brain};
+  my $head = $xmlData->{template}->{$templateName}->{head};
   if ( ! defined $head ) {
     print( "Template not found\n");
     exit 1;
