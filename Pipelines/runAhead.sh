@@ -9,8 +9,8 @@ This script run the test1 or test2 over a machine.
 
 OPTIONS:
    -h      Show this message
-   -i      input image - typically an mprage images
-   -t      template name: [ "Kirby" ] - more options to come
+   -i      input image - typically an mprage image
+   -t      template directory
    -o      output directory
    -v      Verbose
 EOF
@@ -19,9 +19,11 @@ EOF
 IMG=
 VERBOSE=
 ODIR=
-TEMPLATENAME="Kirby"
+TEMPLATEDIR=
+EXE=
+ONAME=
 
-while getopts “hi:t:o:v” OPTION
+while getopts “hi:e:t:d:o:v” OPTION
 do
      case $OPTION in
          h)
@@ -32,13 +34,19 @@ do
              IMG=$OPTARG
              ;;
          t) 
-             TEMPLATENAME=$OPTARG
+             TEMPLATEDIR=$OPTARG
              ;;
-         o)
+         d)
              ODIR=$OPTARG
+             ;;
+         o) 
+             ONAME=$OPTARG
              ;;
          v)
              VERBOSE=1
+             ;;
+         e) 
+             EXE=$OPTARG
              ;;
          ?)
              usage
@@ -47,45 +55,38 @@ do
      esac
 done
 
+if [ ! -d $ODIR ]; then
+  mkdir -p $ODIR
+fi
+
+cp $IMG ${ODIR}/
+FNAME=$(basename $IMG)
+INPUT="${ODIR}/${FNAME}"
+
+if [[ $file =~ \.gz$ ]]; then
+ :
+else
+  gzip -f $INPUT
+  INPUT="${INPUT}.gz"
+fi
+FNAME=$(basename $INPUT .nii.gz)
+
 if [[ -z $IMG ]]
 then
   usage
   exit 1
 fi
 
-TEMPLATE=
-MASK=
-EMASK=
-PRIORS=
+cmd="$EXE $ODIR $ODIR $FNAME $TEMPLATEDIR 1"
 
-if [[ "$TEMPLATENAME" == "Kirby" ]]; then
-  TDIR="/data/jet/jtduda/data/Templates/Kirby/"
-  TEMPLATE="${TDIR}S_template3.nii.gz"
-  MASK="${TDIR}S_template_BrainCerebellumProbabilityMask.nii.gz"
-  EMASK="${TDIR}S_template_BrainCerebellumExtractionMask.nii.gz"
-  PRIORS="${TDIR}Priors/priors%d.nii.gz"
-  BRAIN="${TDIR}S_template3_BrainCerebellum.nii.gz"
-fi
-
-BASENAME=`basename $IMG .nii` 
-export ANTSPATH=/data/jet/jtduda/bin/ants/
-
-ANTS_PIPELINE=/data/jet/jtduda/bin/ants/antsCorticalThickness.sh
-
-cmd="bash ${ANTS_PIPELINE} -d 3 \
-  -a $IMG \
-  -e ${TEMPLATE} \
-  -m ${MASK} \
-  -f ${EMASK} \
-  -p ${PRIORS} \
-  -t ${BRAIN} \
-  -k 0 \
-  -n 3 \
-  -w 0.25 \
-  -o ${ODIR}"
-  
+echo "Running AHEAD"
+echo $cmd
 $cmd
-  
+echo "DONE"
+
+# cleanup
+cp ${ODIR}/${FNAME}/${FNAME}_wholebrainseg.nii.gz $ONAME
+rm -R ${ODIR}/${FNAME}
   
   
   
