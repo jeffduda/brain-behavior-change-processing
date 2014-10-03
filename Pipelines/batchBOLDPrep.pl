@@ -29,8 +29,8 @@ GetOptions( "subject-directory=s"     => \$dir,
             "subject-list=s"          => \$list,
             "output-directory-name=s" => \$odir,
             "sequence-id=s"           => \$seqID,
-            "t1-sequence-id"          => \$t1seqID,
-            "t1-output-directory"     => \$todir,
+            "t1-sequence-id=s"        => \$t1seqID,
+            "t1-output-directory=s"   => \$todir,
             "slots=i"                 => \$slots,
             "info-only"               => \$info )
 or die( "Error in command line arguments\n");
@@ -78,6 +78,12 @@ foreach my $sub (@subs) {
       my @brains = glob("${t1outdir}*BrainSegmentation0N4.nii.gz");
       my @masks = glob("${t1outdir}*BrainExtractionMask.nii.gz");
     
+      my @mats = glob("${t1outdir}*SubjectToTemplate0GenericAffine.mat");
+      my $t1_prefix = $mats[0];
+      chomp($t1_prefix);
+      my $endindex = index($t1_prefix, "SubjectToTemplate0GenericAffine.mat");
+      $t1_prefix = substr( $t1_prefix, 0, $endindex );
+    
       my $brain = "";
       my $mask = "";
     
@@ -106,6 +112,7 @@ foreach my $sub (@subs) {
 
         #my $sequenceName = basename($bold, @extensions);
         print( "$boldname \n");
+        print( "$bold $t1 $mask $t1_prefix\n");
     
         if ( ! -d $outdir ) { 
           `mkdir -p $outdir`;
@@ -120,7 +127,7 @@ foreach my $sub (@subs) {
           
           if ( ! -e "${outdir}/${boldname}_bold.nii.gz") {
 
-            my $exe = "${PIPELINES}/runBOLDPrep.sh -i $bold -o $outfile -s $t1 -x $mask";
+            my $exe = "${PIPELINES}/runBOLDPrep.sh -i $bold -o $outfile -s $t1 -x $mask -t $t1_prefix";
             
             
             if ( $info ) {

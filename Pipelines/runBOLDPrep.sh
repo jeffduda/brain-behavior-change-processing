@@ -13,6 +13,7 @@ Usage:
               -o output bold image
               -s structural image from same session
               -x structural image brain mask
+              -t prefix for t1 to template transform
 Example:
   $0 -i /input/mytaskbold.nii -o /results/mytaskbold.nii.gz -s /input/myt1.nii -x /input/myt1mask.nii
 Required arguments:
@@ -27,11 +28,12 @@ USAGE
 echoParameters() {
     cat <<PARAMETERS
 
-    Using runDTIPrep with the following arguments:
+    Using runBOLDPrep with the following arguments:
       input file              = ${BOLD}
       output file             = ${OUTPUT}
       structural image        = ${T1}
-      structural brain mask   = ${MASK}   
+      structural brain mask   = ${MASK}
+      t1 template transform   = ${TEMPLATE_TRANSFORM}   
 
 PARAMETERS
 }
@@ -52,6 +54,7 @@ BOLD=""
 T1=""
 MASK=""
 OUTPUT=""
+TEMPLATE_TRANSFORM=""
 
 ################################################################################
 #
@@ -78,6 +81,9 @@ else
           x) #brain extraction registration mask
               MASK=$OPTARG
               ;;
+          t) # t1 tempalte transform prefix
+             TEMPLATE_TRANSFORM=$OPTARG
+             ;;
           *) # getopts issues an error message
               echo "ERROR:  unrecognized option -$OPT $OPTARG"
               exit 1
@@ -149,7 +155,7 @@ if [ ! -s "${OUTDIR}/${OUTNAME}_1Warp.nii.gz" ]; then
     echo "OUTPUT NAME: $OUTNAME"
     ${ANTSPATH}ImageMath 3 ${TEMPDIR}/${OUTNAME}_anat.nii.gz m $T1 $MASK         
     ${ANTSPATH}ResampleImageBySpacing 3 ${TEMPDIR}/${OUTNAME}_anat.nii.gz ${TEMPDIR}/${OUTNAME}_anat.nii.gz 2 2 2
-    reg="sh ${ANTSPATH}antsIntermodalityIntrasubject.sh -d 3 -t 3 -i ${OUTDIR}/${OUTNAME}_mean.nii.gz -r ${TEMPDIR}/${OUTNAME}_anat.nii.gz -x $MASK -o ${TEMPDIR}/${OUTNAME}_"
+    reg="sh ${ANTSPATH}antsIntermodalityIntrasubject.sh -d 3 -t 3 -i ${OUTDIR}/${OUTNAME}_mean.nii.gz -r ${TEMPDIR}/${OUTNAME}_anat.nii.gz -x $MASK -o ${TEMPDIR}/${OUTNAME}_ -w $TEMPLATE_TRANSFORM "
     $reg
     
     ${ANTSPATH}antsApplyTransforms -d 3 -i $MASK -o ${TEMPDIR}/${OUTNAME}_Mask.nii.gz -t [ ${TEMPDIR}/${OUTNAME}_0GenericAffine.mat, 1] -t ${TEMPDIR}/${OUTNAME}_1InverseWarp.nii.gz -r ${OUTDIR}/${OUTNAME}_mean.nii.gz
