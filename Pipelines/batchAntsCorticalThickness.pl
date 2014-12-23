@@ -198,10 +198,10 @@ foreach my $sub (@subs) {
         }
       else {
         my $mprage = $mprages[0];
-        my $outputDir = "${sequence}/Results/${odir}/";
+        my $outputDir = "${sequence}/Results/Pre_stats/${odir}/";
         
         if ( ! -d "$outputDir" ) {
-          `mkdir $outputDir`;
+          `mkdir -p $outputDir`;
           }
           
         my $sequenceName = basename($sequence);
